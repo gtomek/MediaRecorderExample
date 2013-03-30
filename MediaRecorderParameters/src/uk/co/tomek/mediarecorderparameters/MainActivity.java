@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import android.app.Activity;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.os.StrictMode;
@@ -18,7 +19,7 @@ public class MainActivity extends Activity {
 
 	public static final String TAG = "MainActivity";
 
-	private static final String mOutputFileName = "mediaFile";
+	private static final String mOutputFileName = "mediaFile.amr";
 	private static final String mPathName = "MediaRecorder";
 
 	private Button mButtonPlay;
@@ -29,8 +30,6 @@ public class MainActivity extends Activity {
 	private MediaManager mMediaManager;
 
 	private boolean DEVELOPER_MODE = true;
-
-
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -66,20 +65,9 @@ public class MainActivity extends Activity {
 		mButtonStopeRecording = (Button)findViewById(R.id.button_stop_recording);
 		mButtonStopeRecording.setOnClickListener(new StopRecordingListener());
 		
-		// create media file
-		File path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
-				 "/" + mPathName);
-		path.mkdirs();
-		File audioFile = null;
-		try {
-			audioFile = File.createTempFile(mOutputFileName, ".arm", path);
-		} catch (IOException e) {
-			Log.d(TAG, "Unable to create media file!");
-			e.printStackTrace();
-			finish();
-		}
+		mMediaManager = MediaMangerImpl.newInstance();
+	
 		
-		mMediaManager = MediaMangerImpl.newInstance(audioFile.getAbsolutePath());
 	}
 	
 	private void keepScreenOn() {
@@ -118,7 +106,7 @@ public class MainActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			keepScreenOn();
-			mMediaManager.recordGreeting();
+			new RecordingTask().execute();
 
 		}
 
@@ -129,8 +117,88 @@ public class MainActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			keepScreenOn();
-			mMediaManager.playGreeting(true);
+			new PlayingTask().execute();
 		}
+	}
+	
+	/**
+	 * 
+	 * @author Tomek
+	 *
+	 */
+	public class RecordingTask extends AsyncTask<Void, Integer, Void> {
+		
+		String outputFile = null;
+
+		@Override
+		protected void onPreExecute() {
+			Log.d(TAG, "onPreExecute for recording");
+			outputFile = getOutputFileName();
+			super.onPreExecute();
+		}
+		
+		@Override
+		protected Void doInBackground(Void... params) {
+			if (outputFile != null && mMediaManager != null) {
+				mMediaManager.recordGreeting(outputFile);
+			}
+			return null;
+		}
+
+	}
+	
+	
+	/**
+	 * 
+	 * @author Tomek
+	 *
+	 */
+	public class PlayingTask extends AsyncTask<Void, Integer, Void> {
+		
+		String outputFile = null;
+
+		@Override
+		protected void onPreExecute() {
+			Log.d(TAG, "onPreExecute for playing");
+			outputFile = getOutputFileName();
+			super.onPreExecute();
+		}
+		
+		@Override
+		protected Void doInBackground(Void... params) {
+			if (outputFile != null && mMediaManager != null) {
+				mMediaManager.playGreeting(outputFile, true);
+			}
+			return null;
+		}
+
+	}
+	
+	/**
+	 * Creates and gets output file name
+	 * @return
+	 */
+	private String getOutputFileName() {
+		
+		// create media file
+		File filePath = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
+				 File.separator + mPathName);
+		if (!filePath.exists()) {
+			filePath.mkdirs();
+		}
+		
+		File audioFile = new File(filePath.getAbsolutePath() + File.separator + mOutputFileName);
+		try {
+			if (!audioFile.exists()) {
+				audioFile.createNewFile();
+			}
+		} catch (IOException e) {
+			Log.d(TAG, "Unable to create media file!");
+			e.printStackTrace();
+			finish();
+		}
+		
+		return audioFile.getAbsolutePath();
 	}
 
 }

@@ -11,7 +11,7 @@ public interface MediaManager {
 	/**
 	 * Records a file.
 	 */
-	void recordGreeting();
+	void recordGreeting(String fileName);
 	
 	/**
 	 * Plays saved greeting.
@@ -19,7 +19,7 @@ public interface MediaManager {
 	 * @param mIsNormalGreetingSelected
 	 *            flags saying if normal greeting is selected
 	 */
-	void playGreeting(boolean isRestartRequired);
+	void playGreeting(String fileName, boolean isRestartRequired);
 
 	/**
 	 * Stops recording process.

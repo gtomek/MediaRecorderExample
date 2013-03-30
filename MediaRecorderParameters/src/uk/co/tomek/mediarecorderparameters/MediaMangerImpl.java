@@ -12,11 +12,9 @@ public final class MediaMangerImpl implements MediaManager {
 	private MediaRecorder mMediaRecorder;
 	private MediaPlayer mMediaPlayer;
 	private int mPausedPosition;
-	private String mOutputFileString;
 	private final String TAG = "MediaMangerImpl";
 
-	private MediaMangerImpl(String outputFile) {
-		mOutputFileString = outputFile;
+	private MediaMangerImpl() {
 	}
 
 	/**
@@ -24,15 +22,13 @@ public final class MediaMangerImpl implements MediaManager {
 	 * @param mOutputFile
 	 * @return MediaMangerImpl
 	 */
-	public static MediaMangerImpl newInstance(
-			String mOutputFile) {
-
-		return new MediaMangerImpl(mOutputFile);
+	public static MediaMangerImpl newInstance() {
+		return new MediaMangerImpl();
 	}
 	
 	@Override
-	public void recordGreeting() {
-		Log.d(TAG , String.format("Recording a file:%s", mOutputFileString));
+	public void recordGreeting(String fileName) {
+		Log.d(TAG , String.format("Recording a file:%s", fileName));
 		// reset any previous paused position 
 		mPausedPosition = 0;
 
@@ -49,7 +45,7 @@ public final class MediaMangerImpl implements MediaManager {
 			mMediaRecorder.reset();
 		}
 		
-		mMediaRecorder.setOutputFile(mOutputFileString);
+		mMediaRecorder.setOutputFile(fileName);
 		try {
 			mMediaRecorder.prepare();
 			mMediaRecorder.start();
@@ -67,8 +63,8 @@ public final class MediaMangerImpl implements MediaManager {
 	}
 
 	@Override
-	public void playGreeting(boolean isRestartRequired) {
-		Log.d(TAG , String.format("Playing a file:%s", mOutputFileString));
+	public void playGreeting(String fileName, boolean isRestartRequired) {
+		Log.d(TAG , String.format("Playing a file:%s", fileName));
 		if (mMediaPlayer == null) {
 			mMediaPlayer = new MediaPlayer();
 			mMediaPlayer.setOnErrorListener(new PlayerErrorListener());
@@ -78,7 +74,7 @@ public final class MediaMangerImpl implements MediaManager {
 		}
 		
 		try {
-			mMediaPlayer.setDataSource(mOutputFileString);
+			mMediaPlayer.setDataSource(fileName);
 			mMediaPlayer.prepare();
 			if (isRestartRequired) {
 				mMediaPlayer.seekTo(0);
