@@ -120,56 +120,80 @@ public class MainActivity extends Activity {
 			new PlayingTask().execute();
 		}
 	}
-	
+
 	/**
+	 * Implementation of {@link AsyncTask} for Recording.
 	 * 
-	 * @author Tomek
-	 *
+	 * @author Tomek Giszczak
+	 * 
 	 */
 	public class RecordingTask extends AsyncTask<Void, Integer, Void> {
 		
-		String outputFile = null;
-
 		@Override
 		protected void onPreExecute() {
 			Log.d(TAG, "onPreExecute for recording");
-			outputFile = getOutputFileName();
+			// TODO: display counter
 			super.onPreExecute();
 		}
 		
 		@Override
 		protected Void doInBackground(Void... params) {
-			if (outputFile != null && mMediaManager != null) {
-				mMediaManager.recordGreeting(outputFile);
+			String outputFileName = getOutputFileName();
+			if (outputFileName != null && mMediaManager != null) {
+				mMediaManager.recordGreeting(outputFileName);
 			}
 			return null;
+		}
+		
+		@Override
+		protected void onProgressUpdate(Integer... values) {
+			// TODO: Update counter
+			super.onProgressUpdate(values);
+		}
+		
+		@Override
+		protected void onPostExecute(Void result) {
+			// TODO Remove the counter
+			super.onPostExecute(result);
 		}
 
 	}
 	
 	
 	/**
+	 * Implementation of {@link AsyncTask} for Playing.
 	 * 
 	 * @author Tomek
-	 *
+	 * 
 	 */
 	public class PlayingTask extends AsyncTask<Void, Integer, Void> {
 		
-		String outputFile = null;
-
 		@Override
 		protected void onPreExecute() {
 			Log.d(TAG, "onPreExecute for playing");
-			outputFile = getOutputFileName();
+			// TODO: display counter
 			super.onPreExecute();
 		}
 		
 		@Override
 		protected Void doInBackground(Void... params) {
-			if (outputFile != null && mMediaManager != null) {
-				mMediaManager.playGreeting(outputFile, true);
+			String outputFileName = getOutputFileName();
+			if (outputFileName != null && mMediaManager != null) {
+				mMediaManager.playGreeting(outputFileName, true);
 			}
 			return null;
+		}
+		
+		@Override
+		protected void onProgressUpdate(Integer... values) {
+			// TODO: Update counter
+			super.onProgressUpdate(values);
+		}
+
+		@Override
+		protected void onPostExecute(Void result) {
+			// TODO Remove the counter
+			super.onPostExecute(result);
 		}
 
 	}
