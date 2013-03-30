@@ -7,5 +7,6 @@
     <string name="play">play</string>
     <string name="stop">stop</string>
     <string name="record">record</string>
+    <string name="zero">0</string>
 
 </resources>

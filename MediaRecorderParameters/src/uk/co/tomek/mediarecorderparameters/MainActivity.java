@@ -14,6 +14,7 @@ import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.WindowManager.LayoutParams;
 import android.widget.Button;
+import android.widget.TextView;
 
 public class MainActivity extends Activity {
 
@@ -30,6 +31,9 @@ public class MainActivity extends Activity {
 	private MediaManager mMediaManager;
 
 	private boolean DEVELOPER_MODE = true;
+
+	// counter that will be displayed on the screen
+	private TextView mCounterTv;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -66,6 +70,8 @@ public class MainActivity extends Activity {
 		mButtonStopeRecording.setOnClickListener(new StopRecordingListener());
 		
 		mMediaManager = MediaMangerImpl.newInstance();
+		
+		mCounterTv = (TextView) findViewById(R.id.seconds_counter_tv);
 	
 		
 	}
@@ -132,7 +138,8 @@ public class MainActivity extends Activity {
 		@Override
 		protected void onPreExecute() {
 			Log.d(TAG, "onPreExecute for recording");
-			// TODO: display counter
+			// reset counter
+			mCounterTv.setText("0");
 			super.onPreExecute();
 		}
 		
@@ -147,16 +154,11 @@ public class MainActivity extends Activity {
 		
 		@Override
 		protected void onProgressUpdate(Integer... values) {
-			// TODO: Update counter
+			// Update counter
+			mCounterTv.setText(values[0]);
 			super.onProgressUpdate(values);
 		}
 		
-		@Override
-		protected void onPostExecute(Void result) {
-			// TODO Remove the counter
-			super.onPostExecute(result);
-		}
-
 	}
 	
 	
@@ -171,7 +173,8 @@ public class MainActivity extends Activity {
 		@Override
 		protected void onPreExecute() {
 			Log.d(TAG, "onPreExecute for playing");
-			// TODO: display counter
+			// reset counter
+			mCounterTv.setText("0");
 			super.onPreExecute();
 		}
 		
@@ -186,14 +189,9 @@ public class MainActivity extends Activity {
 		
 		@Override
 		protected void onProgressUpdate(Integer... values) {
-			// TODO: Update counter
+			// Update counter
+			mCounterTv.setText(values[0]);
 			super.onProgressUpdate(values);
-		}
-
-		@Override
-		protected void onPostExecute(Void result) {
-			// TODO Remove the counter
-			super.onPostExecute(result);
 		}
 
 	}
