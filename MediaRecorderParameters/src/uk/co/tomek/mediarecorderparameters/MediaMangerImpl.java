@@ -136,6 +136,7 @@ public final class MediaMangerImpl implements MediaManager {
 		int position = 0;
 		if (mMediaPlayer != null && mMediaPlayer.isPlaying()) {
 			position = mMediaPlayer.getCurrentPosition();
+			Log.d(TAG, String.format("Got playback position:%d", position));
 		}
 		return position;
 	}

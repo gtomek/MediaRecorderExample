@@ -2,11 +2,14 @@ package uk.co.tomek.mediarecorderparameters;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import android.app.Activity;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Message;
 import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
@@ -19,7 +22,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
 
 	public static final String TAG = "MainActivity";
-
+	private static final int COUNTER_UPDATE_MSG_ID = 123;
 	private static final String mOutputFileName = "mediaFile.amr";
 	private static final String mPathName = "MediaRecorder";
 
@@ -34,6 +37,13 @@ public class MainActivity extends Activity {
 
 	// counter that will be displayed on the screen
 	private TextView mCounterTv;
+
+	private ExecutorService mThreadPool;
+
+	private Handler mHandler;
+
+	public boolean mIsPlaying;
+	
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +66,10 @@ public class MainActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
+		mThreadPool = Executors.newCachedThreadPool();
+		
+		initialiseHandler();
+
 		// play button
 		mButtonPlay = (Button) findViewById(R.id.button_play);
 		mButtonPlay.setOnClickListener(new PlayClickListener());
@@ -72,10 +86,31 @@ public class MainActivity extends Activity {
 		mMediaManager = MediaMangerImpl.newInstance();
 		
 		mCounterTv = (TextView) findViewById(R.id.seconds_counter_tv);
-	
 		
 	}
 	
+	/**
+	 * Initialises Handler and a way to handle a message.
+	 */
+	private void initialiseHandler() {
+		mHandler = new Handler(new Handler.Callback() {
+			
+			@Override
+			public boolean handleMessage(Message msg) {
+				Log.i(TAG, String.format("Received msg:%s", msg));
+				if (msg.what == COUNTER_UPDATE_MSG_ID) {
+					int position = msg.arg1 / 1000;
+					if (position != 0) {
+						mCounterTv.setText(Integer.toString(position));
+					} 
+					return true;
+				} else {
+					return false;
+				}
+			}
+		});
+	}
+
 	private void keepScreenOn() {
 		getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
 	}
@@ -101,6 +136,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
+			mIsPlaying = false;
 			mMediaManager.stopPlayback();
 
 		}
@@ -112,7 +148,17 @@ public class MainActivity extends Activity {
 		@Override
 		public void onClick(View v) {
 			keepScreenOn();
-			new RecordingTask().execute();
+			mThreadPool.execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					String outputFileName = getOutputFileName();
+					if (outputFileName != null && mMediaManager != null) {
+						mMediaManager.recordGreeting(outputFileName);
+					}
+					
+				}
+			});
 
 		}
 
@@ -122,80 +168,24 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
+			mIsPlaying = true;
 			keepScreenOn();
-			new PlayingTask().execute();
+			mThreadPool.execute(new Runnable() {
+				
+				@Override
+				public void run() {
+					String outputFileName = getOutputFileName();
+					if (outputFileName != null && mMediaManager != null) {
+						mThreadPool.execute(new CounterUpdater());
+						mMediaManager.playGreeting(outputFileName, true);
+					}
+				}
+			});
 		}
 	}
+	
+	
 
-	/**
-	 * Implementation of {@link AsyncTask} for Recording.
-	 * 
-	 * @author Tomek Giszczak
-	 * 
-	 */
-	public class RecordingTask extends AsyncTask<Void, Integer, Void> {
-		
-		@Override
-		protected void onPreExecute() {
-			Log.d(TAG, "onPreExecute for recording");
-			// reset counter
-			mCounterTv.setText("0");
-			super.onPreExecute();
-		}
-		
-		@Override
-		protected Void doInBackground(Void... params) {
-			String outputFileName = getOutputFileName();
-			if (outputFileName != null && mMediaManager != null) {
-				mMediaManager.recordGreeting(outputFileName);
-			}
-			return null;
-		}
-		
-		@Override
-		protected void onProgressUpdate(Integer... values) {
-			// Update counter
-			mCounterTv.setText(values[0]);
-			super.onProgressUpdate(values);
-		}
-		
-	}
-	
-	
-	/**
-	 * Implementation of {@link AsyncTask} for Playing.
-	 * 
-	 * @author Tomek
-	 * 
-	 */
-	public class PlayingTask extends AsyncTask<Void, Integer, Void> {
-		
-		@Override
-		protected void onPreExecute() {
-			Log.d(TAG, "onPreExecute for playing");
-			// reset counter
-			mCounterTv.setText("0");
-			super.onPreExecute();
-		}
-		
-		@Override
-		protected Void doInBackground(Void... params) {
-			String outputFileName = getOutputFileName();
-			if (outputFileName != null && mMediaManager != null) {
-				mMediaManager.playGreeting(outputFileName, true);
-			}
-			return null;
-		}
-		
-		@Override
-		protected void onProgressUpdate(Integer... values) {
-			// Update counter
-			mCounterTv.setText(values[0]);
-			super.onProgressUpdate(values);
-		}
-
-	}
-	
 	/**
 	 * Creates and gets output file name
 	 * @return
@@ -223,4 +213,32 @@ public class MainActivity extends Activity {
 		return audioFile.getAbsolutePath();
 	}
 
+	
+	/**
+	 * Updates the duration counter.
+	 * 
+	 */
+	public class CounterUpdater extends Thread {
+		
+		private long UPDATE_PERIOD = 1000;
+
+		@Override
+		public void run() {
+			try {
+				while (mIsPlaying) {
+					int currentPlaybackPosition = mMediaManager.getCurrentPlaybackPosition();
+					Log.d(TAG, String.format("Current position:%d", currentPlaybackPosition));
+					Message msg = Message.obtain(mHandler, COUNTER_UPDATE_MSG_ID, currentPlaybackPosition, 0);
+					mHandler.sendMessage(msg);
+					Thread.sleep(UPDATE_PERIOD);
+				}
+			} catch (InterruptedException e) {
+				Log.w(TAG, "Sleeping Thread has ben interrupted");
+				e.printStackTrace();
+				// propagate the interrupt state
+				Thread.currentThread().interrupt();
+			}
+			mHandler.sendEmptyMessage(0);
+		}
+	}
 }
