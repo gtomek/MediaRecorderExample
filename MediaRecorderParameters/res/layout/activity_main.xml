@@ -13,7 +13,6 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_alignParentTop="true"
-        android:onClick="playGreeting"
         android:text="@string/play" />
 
     <Button
@@ -21,7 +20,6 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/button_play"
-        android:onClick="stopPlayback"
         android:text="@string/stop" />
 
     <Button
@@ -29,7 +27,6 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/button_stop_playback"
-        android:onClick="recordGreeting"
         android:text="@string/record" />
 
     <Button
@@ -37,7 +34,6 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:layout_below="@id/button_record"
-        android:onClick="stopRecording"
         android:text="@string/stop" />
 
 </RelativeLayout>

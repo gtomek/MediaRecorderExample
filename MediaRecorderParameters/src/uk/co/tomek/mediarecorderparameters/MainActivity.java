@@ -4,48 +4,62 @@ import java.io.File;
 import java.io.IOException;
 
 import android.app.Activity;
-import android.media.MediaPlayer;
-import android.media.MediaRecorder;
-import android.media.MediaRecorder.OnErrorListener;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 
 public class MainActivity extends Activity {
 
 	public static final String TAG = "MainActivity";
 
-	public class PlayerErrorListener implements android.media.MediaPlayer.OnErrorListener {
+	private static final String mOutputFileName = "mediaFile";
+	private static final String mPathName = "MediaRecorder";
 
-		@Override
-		public boolean onError(MediaPlayer mp, int what, int extra) {
-			Log.d(TAG, "PlayerErrorListener error");
-			return false;
-		}
+	private Button mButtonPlay;
+	private Button mButtonRecord;
+	private Button mButtonStopPlaying;
+	private Button mButtonStopeRecording;
 
-	}
+	private MediaManager mMediaManager;
 
-	public class RecorderErrorListener implements OnErrorListener {
 
-		@Override
-		public void onError(MediaRecorder mr, int what, int extra) {
-			Log.d(TAG, "RecorderErrorListener error");
-		}
-
-	}
-
-	private MediaRecorder mMediaRecorder;
-	private MediaPlayer mMediaPlayer;
-	private static final String mOutputFileString = "/sdcard/tempFile.arm";  
-	private File mOutputFile;
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
+
+		// play button
+		mButtonPlay = (Button) findViewById(R.id.button_play);
+		mButtonPlay.setOnClickListener(new PlayClickListener());
 		
-	    mOutputFile = new File(mOutputFileString);
+		mButtonRecord = (Button)findViewById(R.id.button_record);
+		mButtonRecord.setOnClickListener(new RecordClickListener());
+		
+		mButtonStopPlaying = (Button)findViewById(R.id.button_stop_playback);
+		mButtonStopPlaying.setOnClickListener(new StopPlayingListener());
+		
+		mButtonStopeRecording = (Button)findViewById(R.id.button_stop_recording);
+		mButtonStopeRecording.setOnClickListener(new StopRecordingListener());
+		
+		// create media file
+		File path = new File(Environment.getExternalStorageDirectory().getAbsolutePath() +
+				 "/" + mPathName);
+		path.mkdirs();
+		File audioFile = null;
+		try {
+			audioFile = File.createTempFile(mOutputFileName, ".arm", path);
+		} catch (IOException e) {
+			Log.d(TAG, "Unable to create media file!");
+			e.printStackTrace();
+			finish();
+		}
+		
+		mMediaManager = MediaMangerImpl.newInstance(audioFile.getAbsolutePath());
 	}
 
 	@Override
@@ -55,73 +69,42 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
-	
-	public void recordGreeting(View view) {
+	public class StopRecordingListener implements OnClickListener {
 
-		// initialise MediaRecorder
-		if (mMediaRecorder == null) {
-			mMediaRecorder = new MediaRecorder();
-			mMediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-			mMediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.AMR_NB);
-			mMediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-			mMediaRecorder.setAudioEncodingBitRate(12200);
-			mMediaRecorder.setOnErrorListener(new RecorderErrorListener());
-		} else {
-			mMediaRecorder.stop();
-			mMediaRecorder.reset();
-		}
-		
-		mMediaRecorder.setOutputFile(mOutputFileString);
-		mMediaRecorder.setMaxDuration(300000);
-		try {
-			mMediaRecorder.prepare();
-			mMediaRecorder.start();
-		} catch (IllegalStateException e) {
-			e.printStackTrace();
-			mMediaRecorder.release();
-			mMediaRecorder = null;
-		} catch (IOException e) {
-			e.printStackTrace();
-			mMediaRecorder.release();
-			mMediaRecorder = null;
-		}
-	}
-
-	public void playGreeting(View view) {
-		if (mMediaPlayer == null) {
-			mMediaPlayer = new MediaPlayer();
-			mMediaPlayer.setOnErrorListener(new PlayerErrorListener());
-		} else {
-			mMediaPlayer.stop();
-			mMediaPlayer.reset();
-		}
-		
-		try {
-			mMediaPlayer.setDataSource(mOutputFileString);
-			mMediaPlayer.prepare();
-			mMediaPlayer.start();
-		} catch (IOException e) {
-			e.printStackTrace();
-			mMediaPlayer.release();
-			mMediaPlayer = null;
+		@Override
+		public void onClick(View v) {
+			mMediaManager.stopRecording();
 		}
 
 	}
 
-	public void stopRecording(View view) {
-		if (mMediaRecorder != null) {
-			mMediaRecorder.stop();
-			mMediaRecorder.release();
-			mMediaRecorder = null;
+	public class StopPlayingListener implements OnClickListener {
+
+		@Override
+		public void onClick(View v) {
+			mMediaManager.stopPlayback();
+
 		}
+
 	}
 
-	public void stopPlayback(View view) {
-		if (mMediaPlayer != null) {
-			mMediaPlayer.stop();
-			mMediaPlayer.release();
-			mMediaPlayer = null;
+	public class RecordClickListener implements OnClickListener {
+
+		@Override
+		public void onClick(View v) {
+			mMediaManager.recordGreeting();
+
 		}
+
+	}
+
+	public class PlayClickListener implements OnClickListener {
+
+		@Override
+		public void onClick(View v) {
+			mMediaManager.playGreeting(true);
+		}
+
 	}
 
 }
