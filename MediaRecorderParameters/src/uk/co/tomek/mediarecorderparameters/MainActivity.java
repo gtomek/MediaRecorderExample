@@ -100,9 +100,7 @@ public class MainActivity extends Activity {
 				Log.i(TAG, String.format("Received msg:%s", msg));
 				if (msg.what == COUNTER_UPDATE_MSG_ID) {
 					int position = msg.arg1 / 1000;
-					if (position != 0) {
-						mCounterTv.setText(Integer.toString(position));
-					} 
+					mCounterTv.setText(Integer.toString(position));
 					return true;
 				} else {
 					return false;
