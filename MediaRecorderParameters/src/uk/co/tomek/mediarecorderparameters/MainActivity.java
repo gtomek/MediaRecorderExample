@@ -6,10 +6,12 @@ import java.io.IOException;
 import android.app.Activity;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.StrictMode;
 import android.util.Log;
 import android.view.Menu;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.WindowManager.LayoutParams;
 import android.widget.Button;
 
 public class MainActivity extends Activity {
@@ -26,10 +28,28 @@ public class MainActivity extends Activity {
 
 	private MediaManager mMediaManager;
 
+	private boolean DEVELOPER_MODE = true;
+
 
 
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
+		 if (DEVELOPER_MODE) {
+	         StrictMode.setThreadPolicy(new StrictMode.ThreadPolicy.Builder()
+	                 .detectDiskReads()
+	                 .detectDiskWrites()
+	                 .detectNetwork()   // or .detectAll() for all detectable problems
+	                 .penaltyLog()
+	                 .build());
+	         StrictMode.setVmPolicy(new StrictMode.VmPolicy.Builder()
+	                 .detectLeakedSqlLiteObjects()
+	                 .detectLeakedClosableObjects()
+	                 .penaltyLog()
+	                 .penaltyDeath()
+	                 .build());
+	     }
+		
+		
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_main);
 
@@ -61,6 +81,11 @@ public class MainActivity extends Activity {
 		
 		mMediaManager = MediaMangerImpl.newInstance(audioFile.getAbsolutePath());
 	}
+	
+	private void keepScreenOn() {
+		getWindow().addFlags(LayoutParams.FLAG_KEEP_SCREEN_ON);
+	}
+
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
@@ -92,6 +117,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
+			keepScreenOn();
 			mMediaManager.recordGreeting();
 
 		}
@@ -102,9 +128,9 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
+			keepScreenOn();
 			mMediaManager.playGreeting(true);
 		}
-
 	}
 
 }
