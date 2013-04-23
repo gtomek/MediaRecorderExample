@@ -32,8 +32,6 @@ public class MainActivity extends Activity {
 	// buttons
 	private Button mButtonPlay;
 	private Button mButtonRecord;
-	private Button mButtonStopPlaying;
-	private Button mButtonStopeRecording;
 
 	// Media Manager object reference
 	private MediaManager mMediaManager;
@@ -81,12 +79,6 @@ public class MainActivity extends Activity {
 		
 		mButtonRecord = (Button)findViewById(R.id.button_record);
 		mButtonRecord.setOnClickListener(new RecordClickListener());
-		
-		mButtonStopPlaying = (Button)findViewById(R.id.button_stop_playback);
-		mButtonStopPlaying.setOnClickListener(new StopPlayingListener());
-		
-		mButtonStopeRecording = (Button)findViewById(R.id.button_stop_recording);
-		mButtonStopeRecording.setOnClickListener(new StopRecordingListener());
 		
 		mMediaManager = MediaMangerImpl.newInstance();
 		
@@ -171,24 +163,69 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
-			mIsPlaying.set(true);
 			keepScreenOn();
+			
+			// check current playback state and act accordingly
+			if (mIsPlaying.get()) { // playing 
+				Log.d(TAG, "Stopping playback");
+				executeStopPlayback();
+			} else { // not playing
+				Log.d(TAG, "Executing playback");
+				executePlayback();
+			}
+		}
+
+		private void executeStopPlayback() {
+			mThreadPool.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					if (mMediaManager != null) {
+						mMediaManager.stopPlayback();
+						mIsPlaying.set(false);
+						updatePlayButtonDescription(mButtonPlay, R.string.play);
+					}
+				}
+			});
+			
+		}
+
+		private void executePlayback() {
 			mThreadPool.execute(new Runnable() {
 				
 				@Override
 				public void run() {
 					String outputFileName = getOutputFileName();
 					if (outputFileName != null && mMediaManager != null) {
-						mThreadPool.execute(new CounterUpdater());
+						runOnUiThread(new CounterUpdater());
+						mMediaManager.stopRecording();
+						mIsRecording.set(false);
 						mMediaManager.playGreeting(outputFileName, true);
+						mIsPlaying.set(true);
+						updatePlayButtonDescription(mButtonPlay, R.string.stop_playback);
 					}
 				}
+
 			});
 		}
 	}
 	
+	/**
+	 * Updates description of a button on UI thread.
+	 * 
+	 * @param resId to be displayed on the button
+	 */
+	private void updatePlayButtonDescription(final Button button, final int resId) {
+		
+		runOnUiThread(new Runnable() {
+			
+			@Override
+			public void run() {
+				button.setText(resId);
+			}
+		});
+	}
 	
-
 	/**
 	 * Creates and gets output file name
 	 * @return

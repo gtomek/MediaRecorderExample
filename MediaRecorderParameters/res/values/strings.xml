@@ -5,8 +5,10 @@
     <string name="action_settings">Settings</string>
     <string name="hello_world">Hello world!</string>
     <string name="play">play</string>
+    <string name="stop_playback">stop playback</string>
     <string name="stop">stop</string>
     <string name="record">record</string>
+    <string name="stop_recording">stop recording</string>
     <string name="zero">0</string>
 
 </resources>

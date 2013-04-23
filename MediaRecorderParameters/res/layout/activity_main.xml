@@ -26,24 +26,10 @@
         android:text="@string/play" />
 
     <Button
-        android:id="@+id/button_stop_playback"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/button_play"
-        android:text="@string/stop" />
-
-    <Button
         android:id="@+id/button_record"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
-        android:layout_below="@id/button_stop_playback"
+        android:layout_below="@id/button_play"
         android:text="@string/record" />
-
-    <Button
-        android:id="@+id/button_stop_recording"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/button_record"
-        android:text="@string/stop" />
 
 </RelativeLayout>
