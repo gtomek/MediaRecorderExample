@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import android.app.Activity;
 import android.os.Bundle;
@@ -26,23 +27,27 @@ public class MainActivity extends Activity {
 	private static final String mOutputFileName = "mediaFile.amr";
 	private static final String mPathName = "MediaRecorder";
 
+	private boolean DEVELOPER_MODE = true;
+	
+	// buttons
 	private Button mButtonPlay;
 	private Button mButtonRecord;
 	private Button mButtonStopPlaying;
 	private Button mButtonStopeRecording;
 
+	// Media Manager object reference
 	private MediaManager mMediaManager;
-
-	private boolean DEVELOPER_MODE = true;
 
 	// counter that will be displayed on the screen
 	private TextView mCounterTv;
 
+	// Thread pool
 	private ExecutorService mThreadPool;
 
 	private Handler mHandler;
 
-	public boolean mIsPlaying;
+	private AtomicBoolean mIsPlaying = new AtomicBoolean(false);
+	private AtomicBoolean mIsRecording = new AtomicBoolean(false);
 	
 
 	@Override
@@ -134,7 +139,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
-			mIsPlaying = false;
+			mIsPlaying.set(false);
 			mMediaManager.stopPlayback();
 
 		}
@@ -166,7 +171,7 @@ public class MainActivity extends Activity {
 
 		@Override
 		public void onClick(View v) {
-			mIsPlaying = true;
+			mIsPlaying.set(true);
 			keepScreenOn();
 			mThreadPool.execute(new Runnable() {
 				
@@ -223,7 +228,7 @@ public class MainActivity extends Activity {
 		@Override
 		public void run() {
 			try {
-				while (mIsPlaying) {
+				while (mIsPlaying.get()) {
 					int currentPlaybackPosition = mMediaManager.getCurrentPlaybackPosition();
 					Log.d(TAG, String.format("Current position:%d", currentPlaybackPosition));
 					Message msg = Message.obtain(mHandler, COUNTER_UPDATE_MSG_ID, currentPlaybackPosition, 0);
@@ -231,8 +236,7 @@ public class MainActivity extends Activity {
 					Thread.sleep(UPDATE_PERIOD);
 				}
 			} catch (InterruptedException e) {
-				Log.w(TAG, "Sleeping Thread has ben interrupted");
-				e.printStackTrace();
+				Log.w(TAG, "CounterUpdater Thread has ben interrupted");
 				// propagate the interrupt state
 				Thread.currentThread().interrupt();
 			}
