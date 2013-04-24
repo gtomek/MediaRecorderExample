@@ -118,43 +118,56 @@ public class MainActivity extends Activity {
 		return true;
 	}
 	
-	public class StopRecordingListener implements OnClickListener {
-
-		@Override
-		public void onClick(View v) {
-			mMediaManager.stopRecording();
-		}
-
-	}
-
-	public class StopPlayingListener implements OnClickListener {
-
-		@Override
-		public void onClick(View v) {
-			mIsPlaying.set(false);
-			mMediaManager.stopPlayback();
-
-		}
-
-	}
-
 	public class RecordClickListener implements OnClickListener {
 
 		@Override
 		public void onClick(View v) {
 			keepScreenOn();
+			
+			//check recodring state and act accordignly
+			if (mIsRecording.get()) {  // is recording
+				executeStopRecording();
+			} else {  // is not recording
+				executeRecording();
+			}
+			
+
+		}
+
+		private void executeStopRecording() {
+			mThreadPool.execute(new Runnable() {
+
+				@Override
+				public void run() {
+					if (mMediaManager != null) {
+						mMediaManager.stopRecording();
+						mIsRecording.set(false);
+						updateButtonDescription(mButtonRecord, R.string.record);
+					}
+					
+				}
+			});
+			
+		}
+
+		private void executeRecording() {
 			mThreadPool.execute(new Runnable() {
 				
 				@Override
 				public void run() {
 					String outputFileName = getOutputFileName();
 					if (outputFileName != null && mMediaManager != null) {
+						mMediaManager.stopPlayback();
+						mIsPlaying.set(false);
+						updateButtonDescription(mButtonPlay, R.string.play);
 						mMediaManager.recordGreeting(outputFileName);
+						mIsRecording.set(true);
+						updateButtonDescription(mButtonRecord, R.string.stop_recording);
+						// TODO: add counter support
 					}
 					
 				}
 			});
-
 		}
 
 	}
@@ -183,7 +196,7 @@ public class MainActivity extends Activity {
 					if (mMediaManager != null) {
 						mMediaManager.stopPlayback();
 						mIsPlaying.set(false);
-						updatePlayButtonDescription(mButtonPlay, R.string.play);
+						updateButtonDescription(mButtonPlay, R.string.play);
 					}
 				}
 			});
@@ -202,7 +215,7 @@ public class MainActivity extends Activity {
 						mMediaManager.playGreeting(outputFileName, true);
 						mIsPlaying.set(true);
 						mThreadPool.execute(new CounterUpdater());
-						updatePlayButtonDescription(mButtonPlay, R.string.stop_playback);
+						updateButtonDescription(mButtonPlay, R.string.stop_playback);
 					}
 				}
 
@@ -215,7 +228,7 @@ public class MainActivity extends Activity {
 	 * 
 	 * @param resId to be displayed on the button
 	 */
-	private void updatePlayButtonDescription(final Button button, final int resId) {
+	private void updateButtonDescription(final Button button, final int resId) {
 		
 		runOnUiThread(new Runnable() {
 			
