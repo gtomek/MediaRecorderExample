@@ -197,11 +197,11 @@ public class MainActivity extends Activity {
 				public void run() {
 					String outputFileName = getOutputFileName();
 					if (outputFileName != null && mMediaManager != null) {
-						runOnUiThread(new CounterUpdater());
 						mMediaManager.stopRecording();
 						mIsRecording.set(false);
 						mMediaManager.playGreeting(outputFileName, true);
 						mIsPlaying.set(true);
+						mThreadPool.execute(new CounterUpdater());
 						updatePlayButtonDescription(mButtonPlay, R.string.stop_playback);
 					}
 				}
