@@ -96,7 +96,7 @@ public class MainActivity extends Activity {
 			public boolean handleMessage(Message msg) {
 				Log.i(TAG, String.format("Received msg:%s", msg));
 				if (msg.what == COUNTER_UPDATE_MSG_ID) {
-					int position = msg.arg1 / 1000;
+					int position = msg.arg1;
 					mCounterTv.setText(Integer.toString(position));
 					return true;
 				} else {
@@ -163,7 +163,8 @@ public class MainActivity extends Activity {
 						mMediaManager.recordGreeting(outputFileName);
 						mIsRecording.set(true);
 						updateButtonDescription(mButtonRecord, R.string.stop_recording);
-						// TODO: add counter support
+						// launch tehe counter
+						mThreadPool.execute(new RecordingCounterUpdater());
 					}
 					
 				}
@@ -214,7 +215,7 @@ public class MainActivity extends Activity {
 						mIsRecording.set(false);
 						mMediaManager.playGreeting(outputFileName, true);
 						mIsPlaying.set(true);
-						mThreadPool.execute(new CounterUpdater());
+						mThreadPool.execute(new PlaybackCounterUpdater());
 						updateButtonDescription(mButtonPlay, R.string.stop_playback);
 					}
 				}
@@ -269,9 +270,8 @@ public class MainActivity extends Activity {
 	
 	/**
 	 * Updates the duration counter.
-	 * 
 	 */
-	public class CounterUpdater extends Thread {
+	public class PlaybackCounterUpdater extends Thread {
 		
 		private long UPDATE_PERIOD = 1000;
 
@@ -280,9 +280,7 @@ public class MainActivity extends Activity {
 			try {
 				while (mIsPlaying.get()) {
 					int currentPlaybackPosition = mMediaManager.getCurrentPlaybackPosition();
-					Log.d(TAG, String.format("Current position:%d", currentPlaybackPosition));
-					Message msg = Message.obtain(mHandler, COUNTER_UPDATE_MSG_ID, currentPlaybackPosition, 0);
-					mHandler.sendMessage(msg);
+					postCounterUpdateMessage(currentPlaybackPosition/1000);
 					Thread.sleep(UPDATE_PERIOD);
 				}
 			} catch (InterruptedException e) {
@@ -292,5 +290,39 @@ public class MainActivity extends Activity {
 			}
 			mHandler.sendEmptyMessage(0);
 		}
+
+	}
+	
+	/**
+	 * Updates duration counter while recording a message.
+	 */
+	private final class RecordingCounterUpdater implements Runnable {
+
+		@Override
+		public void run() {
+			int currentCounter = 0; 
+			while (mIsRecording.get()) {
+				postCounterUpdateMessage(currentCounter);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					// Re-assert the thread's interrupted status
+		            Thread.currentThread().interrupt();
+					return;
+				}
+				currentCounter++;
+			}
+			
+		}
+		
+	}
+	
+	/**
+	 * Posts current position in the voice file to the Handler.
+	 */
+	private void postCounterUpdateMessage(int currentPosition) {
+		Log.d(TAG, String.format("posting counter update of:%d", currentPosition));
+		Message msg = Message.obtain(mHandler, COUNTER_UPDATE_MSG_ID, currentPosition, 0);
+		mHandler.sendMessage(msg);
 	}
 }
